@@ -6,6 +6,12 @@ import { Check, Send, ShieldCheck } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { outgoingInputSchema, type OutgoingAnalysis, type OutgoingInput } from "@/domain/attention";
 
+function recipientList(value: unknown) {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "string") return [];
+  return value.split(",").map((email) => email.trim()).filter(Boolean);
+}
+
 export function ComposeForm({ connected }: { connected: boolean }) {
   const form = useForm<OutgoingInput>({ resolver: zodResolver(outgoingInputSchema), defaultValues: { to: [], subject: "", body: "", purpose: "Other", recipientContext: "" } });
   const analyze = useMutation({
@@ -24,7 +30,7 @@ export function ComposeForm({ connected }: { connected: boolean }) {
     },
   });
   const onSubmit = (values: OutgoingInput) => analyze.mutate(values);
-  const recipient = form.register("to", { setValueAs: (value: string) => value.split(",").map((email) => email.trim()).filter(Boolean) });
+  const recipient = form.register("to", { setValueAs: recipientList });
 
   return <div className="compose-wrap page-scroll">
     <header className="page-heading"><p className="eyebrow">Outgoing gate</p><h1>Send something worth reading.</h1><p>Gated will not write at people. It helps you add context, clarify the ask, and respect the recipient’s attention.</p></header>

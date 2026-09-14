@@ -1,10 +1,70 @@
 import { NextResponse } from "next/server";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { encryptSecret } from "@/lib/security/crypto";
 import { enqueueJob } from "@/lib/jobs/queue";
 import { logger, requestId } from "@/lib/observability/logger";
 import { env } from "@/lib/env";
+
+async function ensureAccountMembership(admin: SupabaseClient, user: User) {
+  const { data: membership } = await admin
+    .from("account_members")
+    .select("account_id")
+    .eq("user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+
+  if (membership) return membership;
+
+  const email = user.email ?? `${user.id}@local.gated`;
+  const displayName =
+    typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name.trim()
+      ? user.user_metadata.full_name.trim()
+      : email.split("@")[0];
+  const avatarUrl = typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null;
+
+  const { error: userError } = await admin.from("users").upsert({
+    id: user.id,
+    email,
+    display_name: displayName,
+    avatar_url: avatarUrl,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "id" });
+  if (userError) throw new Error("Unable to provision user profile");
+
+  const { data: existingAccount } = await admin
+    .from("accounts")
+    .select("id")
+    .eq("created_by", user.id)
+    .limit(1)
+    .maybeSingle();
+
+  let accountId = existingAccount?.id as string | undefined;
+  if (!accountId) {
+    const { data: account, error: accountError } = await admin
+      .from("accounts")
+      .insert({ name: `${displayName}'s account`, slug: user.id, created_by: user.id })
+      .select("id")
+      .single();
+    if (accountError || !account) throw new Error("Unable to provision account");
+    accountId = account.id;
+  }
+
+  const { error: memberError } = await admin
+    .from("account_members")
+    .upsert({ account_id: accountId, user_id: user.id, role: "owner" }, { onConflict: "account_id,user_id" });
+  if (memberError) throw new Error("Unable to provision account membership");
+
+  await admin
+    .from("user_preferences")
+    .upsert({ account_id: accountId, user_id: user.id }, { onConflict: "account_id,user_id" });
+  await admin
+    .from("subscriptions")
+    .upsert({ account_id: accountId }, { onConflict: "account_id" });
+
+  return { account_id: accountId };
+}
 
 export async function GET(request: Request) {
   const id = requestId(request);
@@ -27,8 +87,7 @@ export async function GET(request: Request) {
     if (!profileResponse.ok) throw new Error("Unable to verify Gmail access");
     const gmailProfile = await profileResponse.json() as { emailAddress: string; historyId: string };
     const admin = createSupabaseAdminClient();
-    const { data: membership, error: membershipError } = await admin.from("account_members").select("account_id").eq("user_id", data.user.id).limit(1).single();
-    if (membershipError || !membership) throw new Error("Account was not provisioned");
+    const membership = await ensureAccountMembership(admin, data.user);
     const providerId = data.user.identities?.find((identity) => identity.provider === "google")?.identity_id ?? gmailProfile.emailAddress;
     const scopeList = ["gmail.modify", "gmail.send"];
     const { data: emailAccount, error: emailAccountError } = await admin.from("email_accounts").upsert({

@@ -86,6 +86,56 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$env$2e$ts__$5b
 ;
 ;
 ;
+async function ensureAccountMembership(admin, user) {
+    const { data: membership } = await admin.from("account_members").select("account_id").eq("user_id", user.id).limit(1).maybeSingle();
+    if (membership) return membership;
+    const email = user.email ?? `${user.id}@local.gated`;
+    const displayName = typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name.trim() ? user.user_metadata.full_name.trim() : email.split("@")[0];
+    const avatarUrl = typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null;
+    const { error: userError } = await admin.from("users").upsert({
+        id: user.id,
+        email,
+        display_name: displayName,
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString()
+    }, {
+        onConflict: "id"
+    });
+    if (userError) throw new Error("Unable to provision user profile");
+    const { data: existingAccount } = await admin.from("accounts").select("id").eq("created_by", user.id).limit(1).maybeSingle();
+    let accountId = existingAccount?.id;
+    if (!accountId) {
+        const { data: account, error: accountError } = await admin.from("accounts").insert({
+            name: `${displayName}'s account`,
+            slug: user.id,
+            created_by: user.id
+        }).select("id").single();
+        if (accountError || !account) throw new Error("Unable to provision account");
+        accountId = account.id;
+    }
+    const { error: memberError } = await admin.from("account_members").upsert({
+        account_id: accountId,
+        user_id: user.id,
+        role: "owner"
+    }, {
+        onConflict: "account_id,user_id"
+    });
+    if (memberError) throw new Error("Unable to provision account membership");
+    await admin.from("user_preferences").upsert({
+        account_id: accountId,
+        user_id: user.id
+    }, {
+        onConflict: "account_id,user_id"
+    });
+    await admin.from("subscriptions").upsert({
+        account_id: accountId
+    }, {
+        onConflict: "account_id"
+    });
+    return {
+        account_id: accountId
+    };
+}
 async function GET(request) {
     const id = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$observability$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["requestId"])(request);
     const url = new URL(request.url);
@@ -107,8 +157,7 @@ async function GET(request) {
         if (!profileResponse.ok) throw new Error("Unable to verify Gmail access");
         const gmailProfile = await profileResponse.json();
         const admin = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$supabase$2f$admin$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["createSupabaseAdminClient"])();
-        const { data: membership, error: membershipError } = await admin.from("account_members").select("account_id").eq("user_id", data.user.id).limit(1).single();
-        if (membershipError || !membership) throw new Error("Account was not provisioned");
+        const membership = await ensureAccountMembership(admin, data.user);
         const providerId = data.user.identities?.find((identity)=>identity.provider === "google")?.identity_id ?? gmailProfile.emailAddress;
         const scopeList = [
             "gmail.modify",
@@ -211,17 +260,8 @@ const serverSchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_module
     GOOGLE_PUBSUB_TOPIC: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().optional(),
     GOOGLE_PUBSUB_VERIFICATION_TOKEN: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().optional(),
     CRON_SECRET: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().optional(),
-    AI_PROVIDER: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].enum([
-        "openai",
-        "anthropic",
-        "google"
-    ]).default("openai"),
-    OPENAI_API_KEY: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().optional(),
-    OPENAI_MODEL: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().default("gpt-4o-mini"),
-    ANTHROPIC_API_KEY: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().optional(),
-    ANTHROPIC_MODEL: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().default("claude-3-5-haiku-latest"),
-    GOOGLE_AI_API_KEY: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().optional(),
-    GOOGLE_AI_MODEL: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().default("gemini-2.5-flash-lite")
+    NVIDIA_API_KEY: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().optional(),
+    NVIDIA_MODELS: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$v4$2f$classic$2f$external$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$export__$2a$__as__z$3e$__["z"].string().default("nvidia/llama-3.3-nemotron-super-49b-v1.5,openai/gpt-oss-20b,deepseek-ai/deepseek-v4-flash,z-ai/glm-5.2")
 });
 const parsed = serverSchema.safeParse(process.env);
 if (!parsed.success) {

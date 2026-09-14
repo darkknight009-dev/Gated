@@ -1,6 +1,17 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
   "/api/auth/google/route": "app/api/auth/google/route.js",
+  "/api/jobs/process/route": "app/api/jobs/process/route.js",
+  "/api/onboarding/route": "app/api/onboarding/route.js",
+  "/api/sync/route": "app/api/sync/route.js",
+  "/app/analytics/page": "app/app/analytics/page.js",
+  "/app/compose/page": "app/app/compose/page.js",
+  "/app/page": "app/app/page.js",
+  "/app/people/page": "app/app/people/page.js",
+  "/app/sent/page": "app/app/sent/page.js",
+  "/app/settings/page": "app/app/settings/page.js",
   "/auth/callback/route": "app/auth/callback/route.js",
+  "/onboarding/page": "app/onboarding/page.js",
   "/page": "app/page.js",
   "/sign-in/page": "app/sign-in/page.js"
 }

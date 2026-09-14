@@ -10,7 +10,7 @@ export interface EmailClassificationInput {
 }
 
 export interface AIUsage {
-  provider: "openai" | "anthropic" | "google";
+  provider: "nvidia";
   model: string;
   modelVersion: string;
   promptVersion: string;

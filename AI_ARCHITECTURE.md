@@ -17,7 +17,7 @@ The LLM never directly assigns the final Attention Score. It extracts bounded 0â
 
 ## Provider boundary
 
-`AIProvider` defines classification, extraction, summary, outgoing analysis, and improvement methods. `OpenAIProvider`, `AnthropicProvider`, and `GoogleProvider` are selected by `AI_PROVIDER`. No domain, route, or worker file calls provider endpoints directly.
+`AIProvider` defines classification, extraction, summary, outgoing analysis, and improvement methods. `NvidiaProvider` uses one `NVIDIA_API_KEY` with the comma-separated `NVIDIA_MODELS` fallback list. No domain, route, or worker file calls provider endpoints directly.
 
 Incoming and outgoing outputs use provider-native JSON schemas and are always parsed again with Zod. Persisted metadata includes provider, model name/version, prompt version, tokens, latency, and estimated cost where available.
 

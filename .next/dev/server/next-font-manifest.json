@@ -1,5 +1,13 @@
 {
   "app": {
+    "[project]/src/app/_not-found/page": [],
+    "[project]/src/app/app/analytics/page": [],
+    "[project]/src/app/app/compose/page": [],
+    "[project]/src/app/app/page": [],
+    "[project]/src/app/app/people/page": [],
+    "[project]/src/app/app/sent/page": [],
+    "[project]/src/app/app/settings/page": [],
+    "[project]/src/app/onboarding/page": [],
     "[project]/src/app/page": [],
     "[project]/src/app/sign-in/page": []
   },
