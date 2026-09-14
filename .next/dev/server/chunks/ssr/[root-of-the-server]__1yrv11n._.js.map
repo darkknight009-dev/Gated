@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 46, "column": 0}, "map": {"version":3,"sources":["file:///Users/ishaanrai/Desktop/Gated%20B/src/app/providers.tsx"],"sourcesContent":["\"use client\";\n\nimport { QueryClient, QueryClientProvider } from \"@tanstack/react-query\";\nimport { useState, type ReactNode } from \"react\";\n\nexport function Providers({ children }: { children: ReactNode }) {\n  const [client] = useState(() => new QueryClient({ defaultOptions: { queries: { staleTime: 15_000, refetchOnWindowFocus: false }, mutations: { retry: false } } }));\n  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;\n}\n"],"names":["Providers","children","client","defaultOptions","queries","staleTime","refetchOnWindowFocus","mutations","retry"],"mappings":";;;;;AAEA;AAAA;AACA;AAHA;;;;AAKO,SAASA,UAAU,EAAEC,QAAQ,EAA2B;IAC7D,MAAM,CAACC,OAAO,GAAG,IAAA,iNAAQ,EAAC,IAAM,IAAI,4LAAW,CAAC;YAAEC,gBAAgB;gBAAEC,SAAS;oBAAEC,WAAW;oBAAQC,sBAAsB;gBAAM;gBAAGC,WAAW;oBAAEC,OAAO;gBAAM;YAAE;QAAE;IAC/J,qBAAO,8OAAC,6MAAmB;QAACN,QAAQA;kBAASD;;;;;;AAC/C"}}]
+}

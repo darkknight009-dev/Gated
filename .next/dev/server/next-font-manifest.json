@@ -1,0 +1,9 @@
+{
+  "app": {
+    "[project]/src/app/page": [],
+    "[project]/src/app/sign-in/page": []
+  },
+  "appUsingSizeAdjust": false,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}

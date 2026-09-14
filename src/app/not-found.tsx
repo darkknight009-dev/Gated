@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function NotFound() { return <main className="auth-main" style={{ minHeight: "100svh" }}><div className="auth-card"><p className="eyebrow">404 / Threshold not found</p><h1>This route didn’t make the cut.</h1><p>Nothing was moved or deleted. Head back to a known surface.</p><Link className="btn btn-primary" href="/">Return to Gated</Link></div></main>; }
