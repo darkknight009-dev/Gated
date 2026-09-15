@@ -7,6 +7,21 @@
 3. Mark `reauthorization_required` if refresh failed.
 4. UI directs user to Google re-consent. Stored mail remains safe.
 
+## Gmail callback lands on localhost / ERR_CONNECTION_REFUSED
+
+The OAuth `redirectTo` is built from `APP_URL`. A `localhost:3000` callback means the
+deployment has no production `APP_URL` or Supabase rejected the redirect and fell back to its
+**Site URL**.
+
+1. Confirm `APP_URL` is set to the public HTTPS origin in the hosting environment and redeploy.
+2. Confirm Supabase Auth **Site URL** is the production origin and **Redirect URLs** contains
+   `<origin>/auth/callback`.
+3. Confirm Google's authorized redirect URI is `https://<project-ref>.supabase.co/auth/v1/callback`.
+4. Retry `GET /api/auth/google` from the production origin; the `redirect_to` parameter should
+   show the production host.
+
+No mailbox data is stored when the callback is unreachable; the user simply re-consents.
+
 ## Sync stalled
 
 1. Check oldest queued/processing `processing_jobs`, attempts, lease age, and worker HTTP status.

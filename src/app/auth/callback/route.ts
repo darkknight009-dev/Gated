@@ -5,7 +5,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { encryptSecret } from "@/lib/security/crypto";
 import { enqueueJob } from "@/lib/jobs/queue";
 import { logger, requestId } from "@/lib/observability/logger";
-import { env } from "@/lib/env";
+import { requestOrigin } from "@/lib/site";
 
 async function ensureAccountMembership(admin: SupabaseClient, user: User) {
   const { data: membership } = await admin
@@ -115,9 +115,9 @@ export async function GET(request: Request) {
     await admin.from("product_events").insert({ account_id: membership.account_id, user_id: data.user.id, name: "gmail_connected", properties: {} });
     await enqueueJob({ accountId: membership.account_id, emailAccountId: emailAccount.id, type: "initial_sync", deduplicationKey: `initial:${emailAccount.id}:first`, requestId: id });
     logger.info("gmail_connected", { requestId: id, userId: data.user.id, emailAccountId: emailAccount.id });
-    return NextResponse.redirect(new URL("/onboarding", env.APP_URL));
+    return NextResponse.redirect(new URL("/onboarding", requestOrigin(request)));
   } catch (error) {
     logger.error("oauth_callback_failed", { requestId: id, errorCode: error instanceof Error ? error.message : "unknown" });
-    return NextResponse.redirect(new URL("/sign-in?error=oauth_callback", request.url));
+    return NextResponse.redirect(new URL("/sign-in?error=oauth_callback", requestOrigin(request)));
   }
 }

@@ -25,7 +25,11 @@ Use isolated Supabase projects, Google OAuth clients, Pub/Sub topics, AI keys, e
 ## Required launch configuration
 
 - Google OAuth consent and sensitive/restricted-scope verification as applicable.
-- `APP_URL` must match the public HTTPS origin.
+- `APP_URL` must match the public HTTPS origin. A loopback value in production is ignored and
+  the request host is used instead, so set it explicitly and redeploy.
+- Supabase Auth **Site URL** plus **Redirect URLs** must contain the production
+  `<origin>/auth/callback`. Google's authorized redirect URI is the Supabase callback
+  `https://<project-ref>.supabase.co/auth/v1/callback`.
 - 32-byte `OAUTH_ENCRYPTION_KEY`; strong distinct cron and Pub/Sub secrets.
 - Supabase service role available only to the server runtime.
 - AI vendor privacy/no-training configuration and region reviewed.

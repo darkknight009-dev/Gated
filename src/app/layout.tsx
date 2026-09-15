@@ -4,11 +4,12 @@ import "@fontsource-variable/manrope";
 import "@fontsource-variable/newsreader";
 import "./globals.css";
 import { Providers } from "./providers";
+import { siteOrigin } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: { default: "Gated — Fewer messages. More that matter.", template: "%s · Gated" },
   description: "Gated is the firewall for human attention. Prioritize email by relevance, context, intent, and relationship.",
-  metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(siteOrigin()),
   openGraph: { title: "Gated", description: "Fewer messages. More that matter.", type: "website" },
 };
 

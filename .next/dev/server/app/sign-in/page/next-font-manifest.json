@@ -1,8 +1,0 @@
-{
-  "pages": {},
-  "app": {
-    "[project]/src/app/sign-in/page": []
-  },
-  "appUsingSizeAdjust": false,
-  "pagesUsingSizeAdjust": false
-}

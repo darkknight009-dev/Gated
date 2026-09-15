@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { env, isSupabaseConfigured } from "@/lib/env";
+import { isSupabaseConfigured } from "@/lib/env";
+import { requestOrigin } from "@/lib/site";
 
 const scopes = [
   "openid",
@@ -16,7 +17,7 @@ export async function GET(request: Request) {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${env.APP_URL}/auth/callback`,
+      redirectTo: `${requestOrigin(request)}/auth/callback`,
       scopes: scopes.join(" "),
       queryParams: { access_type: "offline", prompt: "consent", include_granted_scopes: "true" },
     },
