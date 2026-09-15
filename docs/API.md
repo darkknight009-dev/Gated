@@ -9,6 +9,7 @@ All JSON product routes require a valid Supabase SSR session unless documented o
 - `POST /api/auth/sign-out` — clears Supabase session.
 - `POST /api/gmail/disconnect` — revokes Google token and removes credentials.
 - `POST /api/sync` — queues incremental sync for an owned email account.
+- `GET /api/sync/status?emailAccountId=…` — live progress for one owned connection: phase, messages found, messages scored, queued jobs, dead jobs, last sync time. Read-only and uncached; the inbox polls it while work is outstanding.
 - `POST /api/gmail/pubsub?token=…` — authenticated Google Pub/Sub push ingestion; queues reconciliation.
 - `POST /api/jobs/process` — cron/worker-only bounded queue processing with bearer `CRON_SECRET`.
 

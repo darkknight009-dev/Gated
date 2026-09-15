@@ -10,4 +10,4 @@ Production resources:
 - Secret manager entries for Supabase service role, OAuth encryption key, Google client, webhook/cron, and AI provider.
 - WAF/request limits, TLS, centralized redacted logs, metrics/alerts, error sink.
 
-Use IaC in the deployment organization’s cloud of choice. The repository does not invent cloud account IDs, domains, regions, or vendor credentials. See `DEPLOYMENT.md` for release order and gates.
+Use IaC in the deployment organization’s cloud of choice. The repository does not invent cloud account IDs, domains, regions, or vendor credentials. See `docs/DEPLOYMENT.md` for release order and gates.

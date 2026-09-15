@@ -14,7 +14,8 @@ const serverSchema = z.object({
   GOOGLE_PUBSUB_VERIFICATION_TOKEN: z.string().optional(),
   CRON_SECRET: z.string().optional(),
   NVIDIA_API_KEY: z.string().optional(),
-  NVIDIA_MODELS: z.string().default("nvidia/llama-3.3-nemotron-super-49b-v1.5,openai/gpt-oss-20b,deepseek-ai/deepseek-v4-flash,z-ai/glm-5.2"),
+  NVIDIA_MODELS: z.string().default("openai/gpt-oss-20b,mistralai/mistral-nemotron"),
+  NVIDIA_TIMEOUT_MS: z.preprocess((value) => (value === "" ? undefined : value), z.coerce.number().int().positive().default(60_000)),
 });
 
 const parsed = serverSchema.safeParse(process.env);

@@ -10,8 +10,10 @@ function configuredModels() {
 }
 
 function jsonInstruction(schemaName: string) {
-  return `Return only valid JSON for ${schemaName}. Do not wrap it in markdown, prose, or code fences.`;
+  return `Return only valid JSON for ${schemaName}. Do not wrap it in markdown, prose, or code fences. Do not repeat, restate, or summarise the input. Respond with the JSON object and nothing else.`;
 }
+
+const requestTimeoutMs = () => Number(env.NVIDIA_TIMEOUT_MS ?? 60_000);
 
 function parseJsonText(text: string) {
   const trimmed = text.trim();
@@ -40,37 +42,62 @@ export class NvidiaProvider implements AIProvider {
 
     for (const model of models) {
       const started = Date.now();
-      const response = await fetch(NVIDIA_CHAT_COMPLETIONS_URL, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${env.NVIDIA_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: jsonInstruction(schemaName) },
-            { role: "user", content: prompt },
-          ],
-          temperature: 0.1,
-          max_tokens: 1600,
-          stream: false,
-        }),
-        signal: AbortSignal.timeout(30_000),
-      });
+      let response: Response;
+      try {
+        response = await fetch(NVIDIA_CHAT_COMPLETIONS_URL, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${env.NVIDIA_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: jsonInstruction(schemaName) },
+              { role: "user", content: prompt },
+            ],
+            temperature: 0.1,
+            max_tokens: env.NVIDIA_MAX_TOKENS ?? 4096,
+            stream: false,
+          }),
+          signal: AbortSignal.timeout(requestTimeoutMs()),
+        });
+      } catch (error) {
+        // Timeouts and transport failures are not provider errors, so wrap them. They are
+        // worth retrying and are the strongest signal that this model is unusable here.
+        const timedOut = error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+        lastError = new AIProviderError(
+          timedOut ? `NVIDIA request timed out for ${model}` : `NVIDIA request could not be sent for ${model}`,
+          this.name,
+          "upstream_error",
+          true,
+        );
+        continue;
+      }
 
       if (!response.ok) {
+        // A retired (410) or unknown (404) model is the strongest reason to try the next
+        // fallback, so it must not abort the chain. Only credential and malformed-request
+        // errors are fatal for every model in the list.
+        const fatalForEveryModel = response.status === 400 || response.status === 401 || response.status === 403;
         lastError = new AIProviderError(
           `NVIDIA request failed for ${model} (${response.status})`,
           this.name,
           response.status === 429 ? "rate_limited" : "upstream_error",
-          response.status === 429 || response.status >= 500,
+          !fatalForEveryModel && (response.status === 429 || response.status >= 500),
         );
-        if (response.status < 500 && response.status !== 429) break;
+        if (fatalForEveryModel) break;
         continue;
       }
 
-      const payload = await response.json() as {
+      let payload: {
         choices?: Array<{ message?: { content?: string } }>;
         usage?: { prompt_tokens?: number; completion_tokens?: number };
       };
+      try {
+        payload = await response.json();
+      } catch {
+        // A 200 with an empty or non-JSON body happens with some models under load.
+        lastError = new AIProviderError(`NVIDIA returned an unreadable response for ${model}`, this.name, "invalid_output", false);
+        continue;
+      }
       const text = payload.choices?.[0]?.message?.content;
       if (!text) {
         lastError = new AIProviderError(`NVIDIA returned no structured output for ${model}`, this.name, "invalid_output", false);

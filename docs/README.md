@@ -47,4 +47,4 @@ The marketing site and health endpoint render without secrets. Protected product
 - `npx vitest run`
 - `npm run build`
 
-See `DEVELOPMENT.md`, `DEPLOYMENT.md`, and `RUNBOOK.md` for environment setup and operations.
+See `docs/DEVELOPMENT.md`, `docs/DEPLOYMENT.md`, and `docs/RUNBOOK.md` for environment setup and operations.

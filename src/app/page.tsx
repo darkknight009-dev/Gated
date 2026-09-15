@@ -15,7 +15,7 @@ export default function HomePage() {
         <Link href="/" className="brand" aria-label="Gated home"><span className="brand-mark" aria-hidden="true" />GATED</Link>
         <div className="landing-links">
           <a href="#how">How it works</a><a href="#privacy">Privacy</a><span className="key">⌘ K</span>
-          <Link className="btn btn-primary" href="/api/auth/google">Connect Gmail <ArrowRight size={14} /></Link>
+          <a className="btn btn-primary" href="/api/auth/google">Connect Gmail <ArrowRight size={14} /></a>
         </div>
       </nav>
 
@@ -25,7 +25,7 @@ export default function HomePage() {
           <h1 className="display">Not every email <em>deserves</em> entry.</h1>
           <p className="hero-sub">Gated filters communication by relevance, context, intent, and relationship—so meaningful messages rise above the noise.</p>
           <div className="hero-actions">
-            <Link className="btn btn-signal" href="/api/auth/google">Connect Gmail <ArrowRight size={15} /></Link>
+            <a className="btn btn-signal" href="/api/auth/google">Connect Gmail <ArrowRight size={15} /></a>
             <a className="btn btn-secondary" href="#how">See how Gated works <MoveDown size={14} /></a>
           </div>
           <div className="hero-trust"><LockKeyhole size={12} /> Read and send access only. Revoke it anytime.</div>
@@ -53,7 +53,7 @@ export default function HomePage() {
           <p className="eyebrow">Private infrastructure</p>
           <h2 className="display">Your inbox is not training data. <span className="accent">It is entrusted data.</span></h2>
           <p className="muted" style={{ maxWidth: 650, lineHeight: 1.7, fontSize: 16 }}>Encrypted OAuth credentials. Tenant isolation. Configurable retention. No remote email images. No silent hiding. Delete synced data—or your whole account—when you choose.</p>
-          <div style={{ marginTop: 30 }}><Link className="btn btn-signal" href="/api/auth/google">Set your threshold <ArrowRight size={15} /></Link></div>
+          <div style={{ marginTop: 30 }}><a className="btn btn-signal" href="/api/auth/google">Set your threshold <ArrowRight size={15} /></a></div>
         </div>
       </section>
 

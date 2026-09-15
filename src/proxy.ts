@@ -6,6 +6,23 @@ export async function proxy(request: NextRequest) {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return NextResponse.next({ request });
 
+  const protectedRoute =
+    request.nextUrl.pathname.startsWith("/app") ||
+    request.nextUrl.pathname.startsWith("/onboarding");
+  const signIn = () => {
+    const destination = request.nextUrl.clone();
+    destination.pathname = "/sign-in";
+    destination.searchParams.set("next", request.nextUrl.pathname);
+    return NextResponse.redirect(destination);
+  };
+
+  // Anonymous visitors need no Supabase roundtrip. Public pages previously paid a
+  // network call to getUser() on every request, which dominated their latency.
+  const hasSessionCookie = request.cookies
+    .getAll()
+    .some(({ name }) => name.startsWith("sb-") && name.includes("auth-token"));
+  if (!hasSessionCookie) return protectedRoute ? signIn() : NextResponse.next({ request });
+
   let response = NextResponse.next({ request });
   const supabase = createServerClient(url, key, {
     cookies: {
@@ -21,16 +38,7 @@ export async function proxy(request: NextRequest) {
   });
 
   const { data } = await supabase.auth.getUser();
-  const protectedRoute =
-    request.nextUrl.pathname.startsWith("/app") ||
-    request.nextUrl.pathname.startsWith("/onboarding");
-
-  if (protectedRoute && !data.user) {
-    const destination = request.nextUrl.clone();
-    destination.pathname = "/sign-in";
-    destination.searchParams.set("next", request.nextUrl.pathname);
-    return NextResponse.redirect(destination);
-  }
+  if (protectedRoute && !data.user) return signIn();
 
   return response;
 }
