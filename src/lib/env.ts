@@ -16,6 +16,7 @@ const serverSchema = z.object({
   NVIDIA_API_KEY: z.string().optional(),
   NVIDIA_MODELS: z.string().default("openai/gpt-oss-20b,mistralai/mistral-nemotron"),
   NVIDIA_TIMEOUT_MS: z.preprocess((value) => (value === "" ? undefined : value), z.coerce.number().int().positive().default(60_000)),
+  NVIDIA_MAX_TOKENS: z.preprocess((value) => (value === "" ? undefined : value), z.coerce.number().int().positive().default(4096)),
 });
 
 const parsed = serverSchema.safeParse(process.env);

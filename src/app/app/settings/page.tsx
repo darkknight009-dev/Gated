@@ -45,6 +45,7 @@ export default async function SettingsPage() {
 
   return (
     <PrivacySettings
+      audits={formattedAudits as Array<{ id: string; eventTypeId: string; createdFormatted: string }>}
       emailAccount={
         account
           ? {
@@ -60,7 +61,6 @@ export default async function SettingsPage() {
         retainAnalysis: Boolean(preferences?.retain_analysis_after_content_deletion ?? true),
         analyticsOptIn: Boolean(preferences?.analytics_opt_in ?? true),
       }}
-      audits={formattedAudits}
     />
   );
 }
